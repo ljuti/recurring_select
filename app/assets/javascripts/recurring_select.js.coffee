@@ -74,6 +74,9 @@ $.fn.recurring_select = (method) ->
     $.error( "Method #{method} does not exist on jQuery.recurring_select" );
 
 $.fn.recurring_select.options = {
+  include_time: {
+    enabled: true
+  },
   monthly: {
     show_week: [true, true, true, true, false, false]
   }
@@ -99,6 +102,9 @@ $.fn.recurring_select.texts = {
   ok: "OK"
   summary: "Summary"
   first_day_of_week: 0
+  time_hour: "Hour"
+  time_minute: "Minutes"
+  time_second: "Seconds"
   days_first_letter: ["S", "M", "T", "W", "T", "F", "S" ]
   order: ["1st", "2nd", "3rd", "4th", "5th", "Last"]
   show_week: [true, true, true, true, false, false]

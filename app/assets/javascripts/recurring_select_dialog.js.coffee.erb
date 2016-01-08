@@ -73,6 +73,7 @@ window.RecurringSelectDialog =
 
     freqInit: ->
       @freq_select = @outer_holder.find ".rs_frequency"
+      enable_time = $.fn.recurring_select.options["include_time"]["enabled"]
       if @current_rule.hash? && (rule_type = @current_rule.hash.rule_type)?
         if rule_type.search(/Weekly/) != -1
           @freq_select.prop('selectedIndex', 1)
@@ -85,7 +86,20 @@ window.RecurringSelectDialog =
           @initYearlyOptions()
         else
           @initDailyOptions()
+      @initTimeOptions()
       @freq_select.on "change", @freqChanged
+
+    initTimeOptions: ->
+      console.log("Init time options")
+      section = @content.find('.time_options')
+
+      hours_input = section.find('.time_hour')
+      hours_input.on "change keyup", @timeChanged
+      minutes_input = section.find('.time_minute')
+      minutes_input.on "change keyup", @timeChanged
+      seconds_input = section.find('.time_second')
+      seconds_input.on "change keyup", @timeChanged
+      section.show()
 
     initDailyOptions: ->
       section = @content.find('.daily_options')
@@ -249,6 +263,7 @@ window.RecurringSelectDialog =
           @current_rule.hash.rule_type = "IceCube::DailyRule"
           @current_rule.str = $.fn.recurring_select.texts["daily"]
           @initDailyOptions()
+      @initTimeOptions()
       @summaryUpdate()
       @positionDialogVert()
 
@@ -259,6 +274,18 @@ window.RecurringSelectDialog =
       if @current_rule.hash.interval < 1 || isNaN(@current_rule.hash.interval)
         @current_rule.hash.interval = 1
       @summaryUpdate()
+
+    timeChanged: (event) =>
+      hours = @content.find(".time_hour").map -> parseInt($(this).find(":selected").val())
+      minutes = @content.find(".time_minute").map -> parseInt($(this).find(":selected").val())
+      seconds = @content.find(".time_second").map -> parseInt($(this).find(":selected").val())
+      @current_rule.hash ||= {}
+      @current_rule.hash.validations ||= {}
+      @current_rule.hash.validations.hour_of_day = hours[0]
+      @current_rule.hash.validations.minute_of_hour = minutes[0]
+      @current_rule.hash.validations.second_of_minute = seconds[0]
+      console.log("Time changed -- Hour: " + hours[0] + " Minute: " + minutes[0] + " Second: " + seconds[0])
+      console.dir(hours[0])
 
     daysChanged: (event) =>
       $(event.currentTarget).toggleClass("selected")
@@ -299,6 +326,41 @@ window.RecurringSelectDialog =
       false
 
 # ========================= Change callbacks ===============================
+
+    formattedTimeUnit: (u) ->
+      switch
+        when u == 0
+          return "00"
+        when 0 < u and u < 10
+          return "0#{u}"
+        else
+          return u
+      return
+
+    addTimePartial: () ->
+      str = "
+        <div class='time_options'>
+          <label for='time_hour'>#{$.fn.recurring_select.texts["time_hour"]}:</label>
+          <select data-wrapper-class='ui-recurring-select' id='time_hour' class='time_hour' name='time_hour'>
+      "
+      for h in [0..23] by 1
+        str += "<option value='#{h}'>#{@formattedTimeUnit(h)}</option>"
+      str += "
+          </select>
+          <label for='time_minute'>#{$.fn.recurring_select.texts["time_minute"]}:</label>
+          <select data-wrapper-class='ui-recurring-select' id='time_minute' class='time_minute' name='time_minute'>"
+      for m in [0..59] by 1
+        str += "<option value='#{m}'>#{@formattedTimeUnit(m)}</option>"
+      str += "
+          </select>
+          <label for='time_second'>#{$.fn.recurring_select.texts["time_second"]}:</label>
+          <select data-wrapper-class='ui-recurring-select' id='time_second' class='time_second' name='time_second'>"
+      for m in [0..59] by 1
+        str += "<option value='#{m}'>#{@formattedTimeUnit(m)}</option>"
+      str += "
+          </select>
+        </div>"
+
 
     template: () ->
       str = "
@@ -359,6 +421,11 @@ window.RecurringSelectDialog =
                 #{$.fn.recurring_select.texts["years"]}
               </p>
             </div>
+      "
+      if $.fn.recurring_select.options["include_time"]["enabled"] is true
+        str += @addTimePartial()
+      str += "
+
             <p class='rs_summary'>
               <span></span>
             </p>
